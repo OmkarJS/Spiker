@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 fun Application.configureRouting(/*client: HttpClient*/) {
     routing {
         get("/") {
-            call.respondText("Spiker is running")
+            call.respondText("Spiking...")
         }
 
         post("/transcript") {
