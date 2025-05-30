@@ -7,24 +7,35 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
-fun Application.configureRouting(/*client: HttpClient*/) {
+fun Application.configureRouting() {
     routing {
-        get("/") {
-            call.respondText("Spiking...")
-        }
+        spikingRoute()
+        fetchTranscriptRoute()
+    }
+}
 
-        post("/transcript") {
-            try {
-                val request = call.receive<TranscriptRequest>()
-                val youtubeUrl = request.youtubeUrl
-                val transcript = YoutubeTranscriptFetcher.fetchYoutubeTranscript(youtubeUrl)
-                call.respond(TranscriptResponse(transcript = transcript))
-            } catch (e: ContentTransformationException) {
-                call.respond(HttpStatusCode.BadRequest, TranscriptResponse(error = "Invalid JSON format: ${e.message}"))
-            } catch (e: Exception) {
-                e.printStackTrace()
-                call.respond(HttpStatusCode.InternalServerError, TranscriptResponse(error = "Failed to fetch transcript: ${e.message}"))
-            }
+private fun Routing.spikingRoute() {
+    get("/") {
+        call.respondText("Spiking...")
+    }
+}
+
+private fun Routing.fetchTranscriptRoute() {
+    post("/transcript") {
+        try {
+            val request = call.receive<TranscriptRequest>()
+            val youtubeUrl = request.youtubeUrl
+
+            val transcript = YoutubeTranscriptFetcher.fetchYoutubeTranscript(youtubeUrl)
+            call.respond(TranscriptResponse(transcript = transcript))
+        } catch (e: ContentTransformationException) {
+            call.respond(HttpStatusCode.BadRequest, TranscriptResponse(error = "Invalid JSON format: ${e.message}"))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                TranscriptResponse(error = "Failed to fetch transcript: ${e.message}")
+            )
         }
     }
 }

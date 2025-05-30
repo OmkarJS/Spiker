@@ -19,6 +19,12 @@ repositories {
     mavenCentral()
 }
 
+ktor {
+    fatJar {
+        archiveFileName.set("spiker-fat.jar")
+    }
+}
+
 dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
