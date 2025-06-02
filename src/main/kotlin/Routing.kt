@@ -27,14 +27,20 @@ private fun Routing.fetchTranscriptRoute() {
             val youtubeUrl = request.youtubeUrl
 
             val transcript = YoutubeTranscriptFetcher.fetchYoutubeTranscript(youtubeUrl)
-            call.respond(TranscriptResponse(transcript = transcript))
+            call.respond(
+                HttpStatusCode.OK,
+                TranscriptResponse(transcript = transcript)
+            )
         } catch (e: ContentTransformationException) {
-            call.respond(HttpStatusCode.BadRequest, TranscriptResponse(error = "Invalid JSON format: ${e.message}"))
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("error" to "Invalid JSON format: ${e.message}")
+            )
         } catch (e: Exception) {
             e.printStackTrace()
             call.respond(
                 HttpStatusCode.InternalServerError,
-                TranscriptResponse(error = "Failed to fetch transcript: ${e.message}")
+                mapOf("error" to "Failed to fetch transcript: ${e.message}")
             )
         }
     }
@@ -44,4 +50,18 @@ private fun Routing.fetchTranscriptRoute() {
 data class TranscriptRequest(val youtubeUrl: String)
 
 @Serializable
-data class TranscriptResponse(val transcript: String = "", val error: String = "")
+data class TranscriptItem(
+    val text: String,
+    val start: Double,
+    val duration: Double
+)
+
+@Serializable
+data class TranscriptResponse(
+    val transcript: List<TranscriptItem> = emptyList(),
+    val error: String = ""
+)
+
+/*
+@Serializable
+data class TranscriptResponse(val transcript: String = "", val error: String = "")*/

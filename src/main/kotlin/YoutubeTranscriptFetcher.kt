@@ -1,10 +1,11 @@
 package com.example
 
+import kotlinx.serialization.json.Json
 import java.io.File
 import kotlin.collections.set
 
 object YoutubeTranscriptFetcher {
-     fun fetchYoutubeTranscript(youtubeUrl: String): String {
+    fun fetchYoutubeTranscript(youtubeUrl: String): List<TranscriptItem> {
         val projectDir = File(System.getProperty("user.dir"))
         val pythonExecutable = "C:\\Users\\krishna.ext_alten\\AppData\\Local\\Programs\\Python\\Python313\\python.exe"
         val scriptPath = File(projectDir, "scripts/youtube_transcript.py").absolutePath
@@ -20,18 +21,20 @@ object YoutubeTranscriptFetcher {
             youtubeUrl
         ).redirectErrorStream(true)
 
-         // Specify UTF-8 encoding
+        // Specify UTF-8 encoding
         processBuilder.environment()["PYTHONIOENCODING"] = "utf-8"
 
         val process = processBuilder.start()
 
-        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val output = process.inputStream.bufferedReader().readText()
+
         val exitCode = process.waitFor()
 
         if (exitCode != 0) {
             throw RuntimeException("Python script execution failed: $output")
         }
 
-        return output
+        // Else parse as list of TranscriptItem
+        return Json.decodeFromString(output)
     }
 }

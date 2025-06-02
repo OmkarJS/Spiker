@@ -2,26 +2,18 @@ import sys
 import json
 from youtube_transcript_api import YouTubeTranscriptApi
 
-def get_transcript(youtubeVideoID):
+def get_transcript(youtube_video_id):
     try:
         """ If english is not present then go with hindi """
-        transcript_list = YouTubeTranscriptApi.get_transcript(youtubeVideoID, languages=['en', 'hi'])
-
-        # Format transcript as plain text
-        transcript_text = ""
-        """for entry in transcript_list:
-            transcript_text += f"{entry['text']} """
-
-        for entry in transcript_list:
-            start = entry['start']
-            duration = entry['duration']
-            text = entry['text']
-            end = start + duration
-            transcript_text += f"[{start:.2f}s - {end:.2f}s] {text}\n"
-
-        return transcript_text.strip()
+        transcript_list = YouTubeTranscriptApi.get_transcript(youtube_video_id, languages=['en', 'hi'])
+        "return json.dumps(transcript_list)"
+        return json.dumps(transcript_list)
+    except TranscriptsDisabled:
+        return json.dumps({"error": f"Transcripts are disabled for video ID '{youtube_video_id}'."})
+    except NoTranscriptFound:
+        return json.dumps({"error": f"No transcript available in English or Hindi for video ID '{youtube_video_id}'."})
     except Exception as e:
-        return f"Error fetching transcript: {str(e)}"
+        return json.dumps({"error": f"Error fetching transcript: {str(e)}"})
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
