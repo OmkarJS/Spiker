@@ -7,24 +7,41 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
 
-fun Application.configureRouting(/*client: HttpClient*/) {
+fun Application.configureRouting() {
     routing {
-        get("/") {
-            call.respondText("Spiking...")
-        }
+        spikingRoute()
+        fetchTranscriptRoute()
+    }
+}
 
-        post("/transcript") {
-            try {
-                val request = call.receive<TranscriptRequest>()
-                val youtubeUrl = request.youtubeUrl
-                val transcript = YoutubeTranscriptFetcher.fetchYoutubeTranscript(youtubeUrl)
-                call.respond(TranscriptResponse(transcript = transcript))
-            } catch (e: ContentTransformationException) {
-                call.respond(HttpStatusCode.BadRequest, TranscriptResponse(error = "Invalid JSON format: ${e.message}"))
-            } catch (e: Exception) {
-                e.printStackTrace()
-                call.respond(HttpStatusCode.InternalServerError, TranscriptResponse(error = "Failed to fetch transcript: ${e.message}"))
-            }
+private fun Routing.spikingRoute() {
+    get("/") {
+        call.respondText("Spiking...")
+    }
+}
+
+private fun Routing.fetchTranscriptRoute() {
+    post("/transcript") {
+        try {
+            val request = call.receive<TranscriptRequest>()
+            val youtubeUrl = request.youtubeUrl
+
+            val transcript = YoutubeTranscriptFetcher.fetchYoutubeTranscript(youtubeUrl)
+            call.respond(
+                HttpStatusCode.OK,
+                TranscriptResponse(transcript = transcript)
+            )
+        } catch (e: ContentTransformationException) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("error" to "Invalid JSON format: ${e.message}")
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("error" to "Failed to fetch transcript: ${e.message}")
+            )
         }
     }
 }
@@ -33,4 +50,18 @@ fun Application.configureRouting(/*client: HttpClient*/) {
 data class TranscriptRequest(val youtubeUrl: String)
 
 @Serializable
-data class TranscriptResponse(val transcript: String = "", val error: String = "")
+data class TranscriptItem(
+    val text: String,
+    val start: Double,
+    val duration: Double
+)
+
+@Serializable
+data class TranscriptResponse(
+    val transcript: List<TranscriptItem> = emptyList(),
+    val error: String = ""
+)
+
+/*
+@Serializable
+data class TranscriptResponse(val transcript: String = "", val error: String = "")*/

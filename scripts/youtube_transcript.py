@@ -1,35 +1,27 @@
 import sys
 import json
+import warnings
+warnings.filterwarnings("ignore")
+
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._errors import TranscriptsDisabled, NoTranscriptFound
 
-def get_video_id(url):
-    """Extract video ID from YouTube URL"""
-    if "youtube.com/watch?v=" in url:
-        return url.split("youtube.com/watch?v=")[1].split("&")[0]
-    elif "youtu.be/" in url:
-        return url.split("youtu.be/")[1].split("?")[0]
-    return url  # Assume it's already a video ID
-
-def get_transcript(video_url):
+def get_transcript(youtube_video_id):
     try:
-        video_id = get_video_id(video_url)
         """ If english is not present then go with hindi """
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id, languages=['en', 'hi'])
-
-        # Format transcript as plain text
-        transcript_text = ""
-        for entry in transcript_list:
-            transcript_text += f"{entry['text']} "
-
-        return transcript_text.strip()
+        transcript_list = YouTubeTranscriptApi.get_transcript(youtube_video_id, languages=['en', 'hi'])
+        return json.dumps(transcript_list)
+    except TranscriptsDisabled:
+        return json.dumps({"error": f"Transcripts are disabled for video ID '{youtube_video_id}'."})
+    except NoTranscriptFound:
+        return json.dumps({"error": f"No transcript available in English or Hindi for video ID '{youtube_video_id}'."})
     except Exception as e:
-        return f"Error fetching transcript: {str(e)}"
+        return json.dumps({"error": f"Error fetching transcript: {str(e)}"})
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Please provide a YouTube URL as an argument")
         sys.exit(1)
 
-    youtube_url = sys.argv[1]
-    transcript = get_transcript(youtube_url)
+    youtubeVideoID = sys.argv[1]
+    transcript = get_transcript(youtubeVideoID)
     print(transcript)
